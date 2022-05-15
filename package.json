@@ -1,0 +1,30 @@
+{
+  "name": "login--passport--jwt",
+  "version": "1.0.0",
+  "description": "A login function template using username and psw",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon server.js"
+  },
+  "author": "Yan",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.0.1",
+    "body-parser": "^1.19.1",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "csvtojson": "^2.0.10",
+    "dotenv": "^10.0.0",
+    "express": "^4.17.2",
+    "mongoose": "^6.2.0",
+    "passport": "^0.5.2",
+    "passport-jwt": "^4.0.0",
+    "shopify-api-node": "^3.8.1",
+    "typesense": "^1.2.2",
+    "validator": "^13.7.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.15"
+  }
+}
