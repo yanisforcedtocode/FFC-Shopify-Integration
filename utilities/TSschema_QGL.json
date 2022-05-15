@@ -1,134 +1,50 @@
 {
+  "name": "sgfitfam_classes_01",
   "fields": [
     {
-      "facet": false,
-      "index": true,
       "name": ".*",
-      "optional": true,
       "type": "auto"
     },
     {
-      "facet": false,
-      "index": true,
-      "name": "bodyHTML",
-      "optional": true,
+      "name": "Type",
       "type": "string",
-      "locale":"zh"
+      "facet": true
     },
     {
-      "facet": true,
-      "index": true,
-      "name": "collectionTags",
-      "optional": true,
-      "type": "string[]",
-      "locale":"zh"
-    },
-    {
-      "facet": false,
-      "index": true,
-      "name": "handle",
-      "optional": true,
-      "type": "string"
-    },
-    {
-      "facet": false,
-      "index": true,
-      "name": "hasOutOfStockVariants",
-      "optional": true,
-      "type": "bool"
-    },
-    {
-      "facet": true,
-      "index": true,
-      "name": "origin",
-      "optional": true,
-      "type": "string[]"
-    },
-    {
-      "facet": false,
-      "index": true,
-      "name": "price",
-      "optional": true,
-      "type": "float"
-    },
-    {
-      "facet": false,
-      "index": true,
-      "name": "comparedAtPrice",
-      "optional": true,
-      "type": "float"
-    },
-    {
-      "facet": true,
-      "index": true,
-      "name": "subSeries",
-      "optional": true,
-      "type": "string[]"
-    },
-    {
-      "facet": true,
-      "index": true,
-      "name": "tags",
-      "optional": true,
-      "type": "string[]"
-    },
-    {
-      "facet": false,
-      "index": true,
-      "name": "title",
-      "optional": true,
+      "name": "Intensity",
       "type": "string",
-      "locale":"zh"
+      "facet": true
     },
     {
-      "facet": false,
-      "index": true,
-      "name": "totalInventory",
-      "optional": true,
-      "type": "int64"
+      "name": "Online available",
+      "type": "string",
+      "facet": true
     },
     {
-      "facet": false,
-      "index": true,
-      "name": "updatedAt",
-      "optional": true,
-      "type": "int64"
+      "name": "Physical available",
+      "type": "string",
+      "facet": true
     },
     {
-      "facet": true,
-      "index": true,
-      "name": "vendor",
-      "optional": true,
-      "type": "string"
+      "name": "Benefits",
+      "type": "string",
+      "facet": true
     },
     {
-      "facet": true,
-      "index": true,
-      "name": "series",
-      "optional": true,
-      "type": "string[]"
+      "name": "Equipments",
+      "type": "string",
+      "facet": true
     },
     {
-      "facet": false,
-      "index": true,
-      "name": "bodyHtml",
-      "optional": true,
-      "type": "string"
+      "name": "Tag",
+      "type": "string",
+      "facet": true
     },
     {
-      "facet": false,
+      "name": "Class description",
+      "type": "string",
       "index": true,
-      "name": "order",
-      "optional": true,
-      "type": "int64"
-    },
-    {
-      "facet": false,
-      "index": true,
-      "name": "imgSrc",
-      "optional": true,
-      "type": "string"
+      "facet": true
     }
-  ],
-  "name": "shopify_GQL_test_01"
+  ]
 }

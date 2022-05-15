@@ -5,7 +5,7 @@ const csv = require("csvtojson")
 const path = require("path")
 
 // === variables
-const csvFileName = ""
+const csvFileName = "course information for dynamic product section - csv output.csv"
 
 // === controllers
 // === handlers
@@ -22,8 +22,23 @@ const compareKeys = (keys_tags, keys_params)=>{
     })
     return mappedKeys
 }
-
+const loadCsv = async(fileName = csvFileName)=>{
+    try{
+        const dataArr = await csv().fromFile(path.join(process.cwd(),"utilities","csv",fileName))
+        console.log(dataArr[0])
+        return dataArr
+    }catch(err){console.log(err)}
+}
 // === format output ===
+const formatClasses = (arr)=>{
+    const formatedArr = []
+    arr.forEach((el_01)=>{
+        el_01.Updated = Date.parse(el_01.Updated)
+        el_01.Created = Date.parse(el_01.Created)
+        formatedArr.push(el_01)
+    })
+    return formatedArr
+}
 // === remove HTML from bodyText
 function removeHTMLTags(str) {
     if ((str===null) || (str===''))
@@ -59,18 +74,16 @@ let client = new Typesense.Client({
   'connectionTimeoutSeconds': 2
 })
 // === exports ===
-// === restAPI ===
 // === addmany classes to index 
-exports.addManyProducts = asyncWrapper(async(req, res, next)=>{
-    const products = await shopifyAdminAPI.getAllProducts()
+exports.addManyClasses = asyncWrapper(async(req, res, next)=>{
+    const classes = await loadCsv()
     // fit data into schema
-    const productsFormated = formatProducts__Col(products)
-    const tsRes = await client.collections('sgfitfam_classes_2022').documents().import(productsFormated, {action: 'upsert'})
-    // const tsRes = await client.collections('shopify_products_test').documents().upsert(productsFormated[0])
+    const classesFormated = formatClasses(classes)
+    const tsRes = await client.collections('sgfitfam_classes_01').documents().import(classesFormated, {action: 'upsert'})
     res.status(200).json({
         status: 200,
-        result: productsFormated.length,
-        sample: productsFormated[3],
+        result: classesFormated.length,
+        sample: classesFormated[3],
         tsRes: tsRes
     })
 })

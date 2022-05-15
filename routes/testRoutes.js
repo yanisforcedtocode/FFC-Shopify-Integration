@@ -1,7 +1,6 @@
 'use strict'
 //============= require components =============//
 const express  = require('express')
-const passport = require('passport')
 const typeSenseController = require('../controllers/typeSense/typseSenseClient')
 const router = express.Router()
 //============= require controllers =============//
@@ -19,6 +18,6 @@ router.route('test').get(getTest)
 //============= public query operations =============//
 //============= typeSense operations =============//
 router.route('/typeSense/addProducts')
-.get(typeSenseController.addManyProducts)
+.get(typeSenseController.addManyClasses)
 
 module.exports = router

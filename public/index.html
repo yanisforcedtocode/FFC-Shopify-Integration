@@ -1,13 +1,50 @@
-<form action="/user/login" method="post">
-    <div>
-        <label for="email">email</label>
-        <input id="email" name="email" type="text" autocomplete="email" required />
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TS_AutoComplete</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="TS__AC__section">
+        <div class="TS__AC__fitlers" >
+            <div class="TS__AC__fitlers__container" id = "TS__AC__fitlers__container" >
+                <div class="TS__AC__fitlers__container__item" >
+                    <label for="select__<<field_name>>">field name</label>
+                    <select class = "TS__AC__fitlers__container__item__select" name="select__<<field_name>>" id="select__<<field_name>>">
+                        <option value="volvo">Volvo</option>
+                        <option value="saab">Saab</option>
+                        <option value="mercedes">Mercedes</option>
+                        <option value="audi">Audi</option>
+                      </select>
+                </div>
+            </div>
+        </div>
+        <div class="AC__sections__wrapper">
+            <div class="TS__AC__section__container">
+                <input type="text" id="TS__AC__section__container__textField" class = "TS__AC__section__container__textField" placeholder="type and test the ac">
+                <div class="TS__AC__section__container__dataList__wrapper">
+                    <div class="TS__AC__section__container__dataList" id="TS__AC__section__container__dataList">
+                    </div>
+                </div>
+                <i id="TS__AC__section__container__searchBtn" class="fas fa-search"></i>
+            </div>
+            <div class="TS__AC__results" >
+                <div class="TS__AC__results__container">
+                    <div class="TS__AC__results__container__grid" id = "TS__AC__results">
+        
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
     </div>
-    <div>
-        <label for="current-psw">password</label>
-        <input id="current-psw" name="psw" type="psw" autocomplete="current-psw" required />
-    </div>
-    <div>
-        <button type="submit">Sign in</button>
-    </div>
-</form>
+    
+</body>
+<script src="https://cdn.jsdelivr.net/npm/typesense@latest/dist/typesense.min.js"></script>
+<script src = 'script.js'></script>
+<script src="https://kit.fontawesome.com/f4882b2c9f.js" defer="defer" crossorigin="anonymous" ></script>
+</html>
