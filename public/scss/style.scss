@@ -46,6 +46,7 @@
   }
   .TS__AC__results{
       position: absolute;
+      width: 100%;
       top: 60px;
       &__container{
           &__grid{
@@ -94,5 +95,23 @@
                 border-radius: 3px;
               }
           }
+      }
+  }
+  .pageSelect{
+      width: 100%;
+      padding: 10px 5px;
+      &__container{
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        &__pageNum{
+            margin: 0px 10px;
+        }
+        &__right{
+            margin: 0px 10px;
+        }
+        &__left{
+            margin: 0px 10px;
+        }
       }
   }

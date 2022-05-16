@@ -22,7 +22,9 @@ class TS_AC {
         searchTime: false,
         isListOpen: false,
         facets:["Intensity","Online available","Physical available","Equipments","Tag"],
-        filterby:{}
+        filterby:{},
+        getPage:1,
+        hitsPerPage: 3
       },
       response: {
         facet: [],
@@ -32,6 +34,8 @@ class TS_AC {
         tsResponse: false,
         tsQuery: false,
         matchTokens:[],
+        currentPage:1,
+        ttlPage:1
       },
     };
     // Elements
@@ -49,6 +53,9 @@ class TS_AC {
         "#TS__AC__results"
     );
     this.filters = document.querySelector("#TS__AC__fitlers__container")
+    this.pageBtnNxt = document.querySelector("#pageSelect__container__right")
+    this.pageBtnPrev = document.querySelector("#pageSelect__container__left")
+    this.pageNum = document.querySelector("#pageSelect__container__pageNum")
   }
   // listeners
   listenToElm(elm, fn, self = this, event = "input") {
@@ -274,6 +281,11 @@ class TS_AC {
         target.innerHTML = "<p>no results found. </p>"
       }
   }
+  renderPageNum(target, self){
+    const currentPage = self.currentState.response.currentPage
+    const ttlPage = self.currentState.response.ttlPage
+    target.innerText = `${currentPage}/${ttlPage}`
+  }
 
   // query
   getFacets = async (self = this, ms = 100) => {
@@ -341,8 +353,9 @@ class TS_AC {
       q: self.currentState.search.rawQuery,
       query_by: "Class title,Class description",
       filter_by:filterStr,
-      per_page: 6,
-      limit_hits: 10,
+      per_page: self.currentState.search.hitsPerPage,
+      page:self.currentState.search.getPage,
+      limit_hits: 100,
       include_fields: "Class title,Class description",
     };
     const res = await client
@@ -350,9 +363,33 @@ class TS_AC {
       .documents()
       .search(searchParameters);
     console.log(res);
+    self.setCurrentPage(res, self)
+    self.setTotalPage(res, self)
     return res;
   }
   // set State
+  setGetPage(value, self){
+    if(value){
+      self.currentState.search.getPage = value
+    }
+    return self.currentState.search.getPage
+  }
+  setCurrentPage(res, self){
+    if(res?.page){
+      self.currentState.response.currentPage = res.page
+    } else {
+      self.currentState.response.currentPage = 1
+    }
+    return self.currentState.response.currentFilter
+  }
+  setTotalPage(res, self){
+    if(res?.found){
+      const totalHits = res.found
+      const perPage = self.currentState.search.hitsPerPage
+      const ttlPage = Math.ceil(totalHits/ perPage)
+      self.currentState.response.ttlPage = ttlPage
+    }
+  }
   setFilterBy(obj, self){
     const keys = Object.keys(obj)
     keys.forEach((el_01)=>{
@@ -433,22 +470,49 @@ class TS_AC {
         }
       const res = await self.getDocByFilter(self)
       self.renderSearchResult(self.searchResults, self.formatSearchResult(res, self), self)
+      self.renderPageNum(self.pageNum, self)
   }
   setFiltersCompo = async(self = this, ms = 100)=>{
     const res = await self.getFacets(self, ms)
     const facets = self.formatFacets(res)
     self.renderFilters(self.filters, facets, self)
-    self.listenToElm(self.filters, self.getByFilterCompo, self, "click")
+    self.listenToElm(self.filters, self.getByFilterCompo, self, "change")
   }
   getByFilterCompo = async(event, self = this, ms = 100)=>{
     if(event.target.value && event.target.dataset){
       let obj = {}
       obj[event.target.dataset.fieldname] = event.target.value
       self.setFilterBy(obj, self)
+      self.setGetPage(1, self)
       const res = await self.getDocByFilter(self, 400)
       self.renderSearchResult(self.searchResults, self.formatSearchResult(res, self), self)
+      self.renderPageNum(self.pageNum, self)
     }
   }
+  pageLRCompo(e, self){
+    e.preventDefault()
+    const value = e.target.dataset.value
+    const currentPage = self.currentState.response.currentPage
+    const ttlPage = self.currentState.response.ttlPage
+    if(value === 'left'){
+      if(currentPage>1){
+        self.setGetPage(currentPage - 1, self)
+        self.submitSearchCompo("",self, 300)
+        }
+    }
+    if(value === 'right'){
+      if (currentPage<ttlPage){
+            self.setGetPage(currentPage + 1, self)
+            self.submitSearchCompo("",self, 300)
+        }
+    }
+  }
+  initSearchCompo = async(self)=>{
+    const res = await self.getDocByFilter(self)
+      self.renderSearchResult(self.searchResults, self.formatSearchResult(res, self), self)
+      self.renderPageNum(self.pageNum, self)
+  }
+
   // mount
   mount = async (self) => {
     self.listenToElm(self.textInput, self.textInputCompo, self, "input");
@@ -456,6 +520,10 @@ class TS_AC {
     self.setFiltersCompo(self, 100)
     self.recursiveInputCompo(self.textInput, self);
     self.listenToElm(self.searchBtn, self.submitSearchCompo, self, "click")
+    self.listenToElm(self.pageBtnPrev, self.pageLRCompo, self, "click")
+    self.listenToElm(self.pageBtnNxt, self.pageLRCompo, self, "click")
+    self.initSearchCompo(self)
+    
   };
   // init
   init = async (self = this) => {
