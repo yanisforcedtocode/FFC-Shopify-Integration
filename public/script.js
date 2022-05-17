@@ -377,16 +377,23 @@ class TS_AC {
   setCurrentPage(res, self){
     if(res?.page){
       self.currentState.response.currentPage = res.page
-    } else {
+    } 
+    // if(res.found === 0){
+    //   self.currentState.response.currentPage = 1
+    // }
+    else {
       self.currentState.response.currentPage = 1
     }
     return self.currentState.response.currentFilter
   }
   setTotalPage(res, self){
-    if(res?.found){
+    if(res?.found || res.found === 0){
       const totalHits = res.found
       const perPage = self.currentState.search.hitsPerPage
-      const ttlPage = Math.ceil(totalHits/ perPage)
+      let ttlPage = Math.ceil(totalHits/ perPage)
+      if(totalHits === 0){
+        ttlPage = 1
+      }
       self.currentState.response.ttlPage = ttlPage
     }
   }
@@ -464,14 +471,24 @@ class TS_AC {
       (self = this)
     );
   };
-  submitSearchCompo = async (event, self = this, ms = 800)=>{
+  submitSearchCompo = async (event, self = this, ms = 300)=>{
       if (!self.limitQueryRate(ms, self)) {
           return `query over limited rate at ${ms}ms`;
         }
-      const res = await self.getDocByFilter(self)
+        const res = await self.getDocByFilter(self)
       self.renderSearchResult(self.searchResults, self.formatSearchResult(res, self), self)
       self.renderPageNum(self.pageNum, self)
   }
+  submitQueryCompo = async (event, self = this, ms = 300)=>{
+    if (!self.limitQueryRate(ms, self)) {
+        return `query over limited rate at ${ms}ms`;
+      }
+      self.setGetPage(1, self)
+      const res = await self.getDocByFilter(self)
+      self.setTotalPage(res, self)
+    self.renderSearchResult(self.searchResults, self.formatSearchResult(res, self), self)
+    self.renderPageNum(self.pageNum, self)
+}
   setFiltersCompo = async(self = this, ms = 100)=>{
     const res = await self.getFacets(self, ms)
     const facets = self.formatFacets(res)
@@ -519,7 +536,7 @@ class TS_AC {
     self.listenToElm(self.dataList, self.dataListCompo, self, "click");
     self.setFiltersCompo(self, 100)
     self.recursiveInputCompo(self.textInput, self);
-    self.listenToElm(self.searchBtn, self.submitSearchCompo, self, "click")
+    self.listenToElm(self.searchBtn, self.submitQueryCompo, self, "click")
     self.listenToElm(self.pageBtnPrev, self.pageLRCompo, self, "click")
     self.listenToElm(self.pageBtnNxt, self.pageLRCompo, self, "click")
     self.initSearchCompo(self)
