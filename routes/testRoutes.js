@@ -1,23 +1,27 @@
-'use strict'
+'use strict';
+Object.defineProperty(exports, "__esModule", { value: true });
+const saveStringsToFiles_1 = require("./../utilities/saveStringsToFiles");
 //============= require components =============//
-const express  = require('express')
-const typeSenseController = require('../controllers/typeSense/typseSenseClient')
-const router = express.Router()
+const express = require('express');
+const typeSenseController = require('../controllers/typeSense/typseSenseClient');
+const router = express.Router();
 //============= require controllers =============//
-const asyncWrapper = require('./../utilities/asyncWrapper')
+const asyncWrapper = require('./../utilities/asyncWrapper');
 //============= handlers =============//
-const getTest = asyncWrapper(async(req,res,next)=>{
-    console.log('protected route connected')
+const getTest = asyncWrapper(async (req, res, next) => {
+    console.log('Test route connected');
+    console.log(req.query);
+    if (req.query.code && req.query.scope) {
+        const authKey = { code: req.query.code, scope: req.query.scope };
+        await (0, saveStringsToFiles_1.writeStringToFile)('./utilities/keyFiles/calendarAuthKey.txt', JSON.stringify(authKey));
+    }
     return res.status(200).json({
-        message: 'protected route connected'
-    })
-})
+        message: 'Test route connected'
+    });
+});
 //============= routes =============//
-router.route('test').get(getTest)
-//============= update operations =============//
-//============= public query operations =============//
+router.route('/').get(getTest);
 //============= typeSense operations =============//
-router.route('/typeSense/addProducts')
-.get(typeSenseController.addManyClasses)
-
-module.exports = router
+router.route('/typeSense/addClasses')
+    .get(typeSenseController.addManyClasses);
+module.exports = router;

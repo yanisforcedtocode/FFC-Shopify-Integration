@@ -5,7 +5,7 @@ const csv = require("csvtojson")
 const path = require("path")
 
 // === variables
-const csvFileName = "course information for dynamic product section - csv output.csv"
+const csvFileName = "FITFAMCO - Programs List 20241119.csv"
 
 // === controllers
 // === handlers
@@ -76,7 +76,7 @@ let client = new Typesense.Client({
 // === exports ===
 // === addmany classes to index 
 exports.addManyClasses = asyncWrapper(async(req, res, next)=>{
-    const classes = await loadCsv()
+    const classes = await loadCsv('FITFAMCO - Programs List 20241119.csv')
     // fit data into schema
     const classesFormated = formatClasses(classes)
     const tsRes = await client.collections('sgfitfam_classes_01').documents().import(classesFormated, {action: 'upsert'})
@@ -84,6 +84,7 @@ exports.addManyClasses = asyncWrapper(async(req, res, next)=>{
         status: 200,
         result: classesFormated.length,
         sample: classesFormated[3],
-        tsRes: tsRes
+        tsRes: tsRes,
+        tsResLength: tsRes.length
     })
 })

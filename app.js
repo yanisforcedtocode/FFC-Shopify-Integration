@@ -1,50 +1,36 @@
-'use strict'
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const cors_1 = __importDefault(require("cors"));
+const rawParser_1 = __importDefault(require("./utilities/rawParser"));
 //============= require modules =============//
-const express = require('express')
-const app = express()
-const passport = require('passport')
-const cookieParser = require('cookie-parser')
-const cors = require('cors')
-//============= variables =============//
-const protectRoute = (passport)=>{
-    return passport.authenticate('jwt', { session: false })
+const app = (0, express_1.default)();
+const testRoutes = require('./routes/testRoutes');
+const AppError = require('./utilities/appError');
+const globalErrorHandler = require('./controllers/modalities/errorController');
+const errorHandlers_1 = require("./utilities/errorHandlers");
+const webHooks_1 = require("./controllers/shopify/webHooks");
+const googlecalendar_core_1 = require("./controllers/googlecalendar_core");
+app.use('/webHook', rawParser_1.default, webHooks_1.shopifyWebHookRoutes);
+(0, googlecalendar_core_1.findClientEventByOrderId)(process.env.GCalendar_calId, 6292931281206);
+// const corsOptions = {origin: ['']}
+app.use((0, cors_1.default)());
+// static serve
+app.use(express_1.default.static('public'));
+// Middleware to parse JSON request bodies and handle URL encoded data
+app.use(express_1.default.json());
+app.use(express_1.default.urlencoded({ extended: true }));
+// DEV middleswares
+if (process.env.NODE_ENV === 'development') {
+    const morgan = require('morgan');
+    app.use(morgan('dev'));
 }
-const corsOptions = {
-  origin: 'http://127.0.0.1:9292',
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  
-  credentials: true,
-  allowedHeaders: "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers",
-  preflightContinue: true,
-  optionsSuccessStatus: 200,
-}
-//============= require handlers =============//
-const configPassport = require('./passport-config')
-const testRoutes = require('./routes/testRoutes')
-const AppError = require('./utilities/appError')
-const globalErrorHandler = require('./controllers/modalities/errorController')
-//============= db model =============//
-//============= global dir =============//
-global.__basedir = __dirname
-//============= middleware =============//
-if(process.env.environment === 'development'){
-  app.all("*", (req, res, next)=>{
-    next(console.log(`CORS allowed origin: ${req.get('origin')===corsOptions.origin}`)) 
-  })
-}
-app.use(cors(corsOptions),)
-app.use(express.static('public'));
-app.use(cookieParser());
-app.use(express.json({limit:'10kb'}));
-//============= handlers =============//
-//============= passport initialization =============//
-app.use(passport.initialize())
-configPassport(passport)
-//============= Routes =============//
+// Routes
 app.use('/test', testRoutes);
-app.all("*", (req, res, next)=>{
-    next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404)) 
-  })
-app.use(globalErrorHandler)
-//============= Exports =============//
-module.exports = app
+// catch errors
+app.all("*", errorHandlers_1.notFoundHandler);
+app.use(globalErrorHandler);
+module.exports = app;

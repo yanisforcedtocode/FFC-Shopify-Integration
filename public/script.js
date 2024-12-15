@@ -21,10 +21,10 @@ class TS_AC {
         submitTime: false,
         searchTime: false,
         isListOpen: false,
-        facets:["Intensity","Online available","Physical available","Equipments","Tag"],
+        facets:["Type","Intensity","Online available","Physical available","Equipments","Tag"],
         filterby:{},
         getPage:1,
-        hitsPerPage: 3
+        hitsPerPage: 4
       },
       response: {
         facet: [],
@@ -144,13 +144,16 @@ class TS_AC {
       dataListArr = dataListArr.map((el)=>{
         return el.toLowerCase().replace(",","").replace(".","")
       })
+      // remove duplicates
       dataListArr.forEach((el, ind, arr)=>{
           arr.forEach((el_01, ind_01)=>{
               if(JSON.stringify(el) === JSON.stringify(el_01) && ind !== ind_01){
                 arr[ind] = ""
               }
           })
-
+      })
+      dataListArr = dataListArr.filter((el, ind)=>{
+        return true
       })
     //   dataListArr = dataListArr.filter((el, ind, arr)=>{
     //       console.log(arr.indexOf(el, (arr.indexOf(el)+1)))
@@ -160,6 +163,7 @@ class TS_AC {
     }
   }
   formatSearchResult(res, self){
+    console.log(res)
       const dataArr = []
     if (res?.hits?.length >= 1) {
           res.hits.forEach((el_01) => {
@@ -167,7 +171,7 @@ class TS_AC {
                 dataArr.push({
                     summary:self.removeHTMLTags(el_01.document["Class description"]),
                     title: el_01.document["Class title"],
-                    // imageSrc:el_01.document['image.src']
+                    image: el_01.document["Image"],
                 })
             }
           });
@@ -198,6 +202,12 @@ class TS_AC {
       filterStr = filterArr.join("&&")
     }
     return filterStr
+  }
+  limitStrLength(str, limit = this.initState.search.summaryLimit){
+    if(str.length > limit){
+      str = str.slice(0,limit) + `<span class = "hidden__description">${str.slice(limit)}</span>` + `<span class = "readMore__button"> ...Read More</span>`
+    }
+    return str
   }
 
 
@@ -272,10 +282,16 @@ class TS_AC {
             </div>`
           let html = ''
           arr.forEach((el)=>{
-              const card = template.replace('<<imgSrc>>', 'el.imageSrc').replace('<<title>>', el.title).replace('<<summary>>', el.summary)
+            console.log(el)
+              const card = template.replace('<<imgSrc>>', el.image).replace('<<title>>', el.title).replace('<<summary>>', self.limitStrLength(el.summary,130))
               html = html + card
           })
           target.innerHTML = html
+          // read more function
+          const cards = target.querySelectorAll(".TS__AC__results__container__grid__card")
+          cards.forEach((el)=>{
+            self.renderReadMore(el, self)
+          })
       }
       else{
         target.innerHTML = "<p>no results found. </p>"
@@ -285,6 +301,24 @@ class TS_AC {
     const currentPage = self.currentState.response.currentPage
     const ttlPage = self.currentState.response.ttlPage
     target.innerText = `${currentPage}/${ttlPage}`
+  }
+  restFilters(target, self){
+    const input = target.querySelector("input")
+    const inputArr = Array.from(input)
+    inputArr.forEach((el)=>{
+      el.selectedIndex  = 0
+    })
+
+  }
+  renderReadMore(target, self){
+    const readmore = target.querySelector(".readMore__button")
+    const hiddenDescription = target.querySelector(".hidden__description")
+    const showDescription = ()=>{
+      hiddenDescription.style.display = "contents"
+      hiddenDescription.style.opacity = "100%"
+      readmore.style.display = "none"
+    }
+    self.listenToElm(target, showDescription, self, "click")
   }
 
   // query
@@ -338,7 +372,8 @@ class TS_AC {
       query_by: "Class title,Class description",
       per_page: 6,
       limit_hits: 6,
-      include_fields: "Class title,Class description",
+      include_fields: "Class title,Class description,Image",
+      sort_by: "_text_match:des"
     };
     const res = await client
       .collections("sgfitfam_classes_01")
@@ -356,7 +391,8 @@ class TS_AC {
       per_page: self.currentState.search.hitsPerPage,
       page:self.currentState.search.getPage,
       limit_hits: 100,
-      include_fields: "Class title,Class description",
+      include_fields: "Class title,Class description,Image,Created",
+      sort_by: "Created:desc"
     };
     const res = await client
       .collections("sgfitfam_classes_01")
@@ -453,6 +489,7 @@ class TS_AC {
       self.renderInputValue(self.textInput, self.currentState.search.rawQuery, self)
       self.setIsListOpen(false, self)
       self.renderListDisplay(self.dataList,self.currentState.search.isListOpen, self)
+      self.setGetPage(1, self)
       self.submitSearchCompo(e, self, 800)
   }
   recursiveInputCompo = async (target = self.textInput, self = this) => {
@@ -480,8 +517,12 @@ class TS_AC {
       self.renderPageNum(self.pageNum, self)
   }
   submitQueryCompo = async (event, self = this, ms = 300)=>{
+
     if (!self.limitQueryRate(ms, self)) {
         return `query over limited rate at ${ms}ms`;
+      }
+      if(event.key !== "Enter"){
+        return `not enter key pressed`
       }
       self.setGetPage(1, self)
       const res = await self.getDocByFilter(self)
@@ -489,6 +530,7 @@ class TS_AC {
     self.renderSearchResult(self.searchResults, self.formatSearchResult(res, self), self)
     self.renderPageNum(self.pageNum, self)
 }
+
   setFiltersCompo = async(self = this, ms = 100)=>{
     const res = await self.getFacets(self, ms)
     const facets = self.formatFacets(res)
@@ -537,6 +579,7 @@ class TS_AC {
     self.setFiltersCompo(self, 100)
     self.recursiveInputCompo(self.textInput, self);
     self.listenToElm(self.searchBtn, self.submitQueryCompo, self, "click")
+    self.listenToElm(self.textInput, self.submitQueryCompo, self, "keyup")
     self.listenToElm(self.pageBtnPrev, self.pageLRCompo, self, "click")
     self.listenToElm(self.pageBtnNxt, self.pageLRCompo, self, "click")
     self.initSearchCompo(self)

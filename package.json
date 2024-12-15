@@ -16,15 +16,20 @@
     "cors": "^2.8.5",
     "csvtojson": "^2.0.10",
     "dotenv": "^10.0.0",
-    "express": "^4.17.2",
+    "express": "^4.21.2",
+    "googleapis": "^144.0.0",
     "mongoose": "^6.2.0",
-    "passport": "^0.5.2",
+    "morgan": "^1.10.0",
+    "passport": "^0.7.0",
     "passport-jwt": "^4.0.0",
     "shopify-api-node": "^3.8.1",
     "typesense": "^1.2.2",
     "validator": "^13.7.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.15"
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "nodemon": "^3.1.9"
   }
 }

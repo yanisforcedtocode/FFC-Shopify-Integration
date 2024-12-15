@@ -19,13 +19,16 @@ body {
 }
 
 .TS__AC__section__container {
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+  width: 100%;
   z-index: 2;
   border: 1px solid;
   background-color: #fff;
   padding: 5px 10px;
   margin: 0px 5px;
   border-radius: 3px;
-  position: relative;
+  position: absolute;
 }
 
 .TS__AC__section__container__textField {
@@ -44,12 +47,14 @@ body {
           transition-duration: 300ms;
   font-size: 0.7rem;
   text-indent: 5px;
+  color: #000;
 }
 
 .TS__AC__section__container #TS__AC__section__container__searchBtn {
   position: absolute;
   top: 10px;
   right: 10px;
+  color: #000;
 }
 
 .TS__AC__section textarea:focus, .TS__AC__section input:focus {
@@ -57,7 +62,7 @@ body {
 }
 
 .TS__AC__results {
-  position: absolute;
+  position: relative;
   width: 100%;
   top: 60px;
 }
@@ -65,18 +70,26 @@ body {
 .TS__AC__results__container__grid {
   display: -ms-grid;
   display: grid;
-  -ms-grid-columns: (1fr)[3];
-      grid-template-columns: repeat(3, 1fr);
+  -ms-grid-columns: (1fr)[2];
+      grid-template-columns: repeat(2, 1fr);
+}
+
+@media screen and (max-width: 600px) {
+  .TS__AC__results__container__grid {
+    display: block;
+  }
 }
 
 .TS__AC__results__container__grid__card {
-  padding: 5px 15px;
+  padding: 5px 0px;
   margin: 5px;
 }
 
 .TS__AC__results__container__grid__card__media__imgWrapper {
   width: 100%;
-  aspect-ratio: 1;
+  aspect-ratio: 2;
+  overflow: hidden;
+  border-radius: 5px;
 }
 
 .TS__AC__results__container__grid__card__media__img {
@@ -87,11 +100,26 @@ body {
 }
 
 .TS__AC__results__container__grid__card__content__title {
-  font-size: 1rem;
+  font-size: 1.1rem;
 }
 
 .TS__AC__results__container__grid__card__content__description {
-  font-size: 0.7rem;
+  font-size: 0.85rem;
+}
+
+.TS__AC__results__container__grid__card__content__description .hidden__description {
+  font-size: 0.85rem;
+  display: none;
+  opacity: 0%;
+  -webkit-transition-property: opacity;
+  transition-property: opacity;
+  -webkit-transition-duration: 200ms;
+          transition-duration: 200ms;
+}
+
+.TS__AC__results__container__grid__card__content__description .readMore__button {
+  color: #66c7c3;
+  cursor: pointer;
 }
 
 .TS__AC__fitlers__container {
@@ -100,6 +128,13 @@ body {
   -ms-grid-columns: (1fr)[3];
       grid-template-columns: repeat(3, 1fr);
   padding: 30px 0px;
+  gap: 5px;
+}
+
+@media screen and (max-width: 600px) {
+  .TS__AC__fitlers__container {
+    display: block;
+  }
 }
 
 .TS__AC__fitlers__container__item {
