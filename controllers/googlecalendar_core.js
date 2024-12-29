@@ -3,22 +3,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getServerCalendars = exports.findClientEventByOrderId = exports.newClientEvent = exports.getClientEvents = exports.getClientCalendars = exports.getClientToken = exports.getAuth2Code = void 0;
+exports.newServiceEvent = exports.getServiceEvents = exports.findServiceEventByOrderId = exports.newClientEvent = exports.getClientEvents = exports.getClientCalendars = exports.getClientToken = exports.getAuth2Code = void 0;
 const path_1 = __importDefault(require("path"));
 const openurl_1 = require("../utilities/openurl");
 const saveStringsToFiles_1 = require("../utilities/saveStringsToFiles");
 const logDev_1 = require("../utilities/logDev");
 const { google } = require('googleapis');
-const calendar = google.calendar('v3');
 const oauth2Client = new google.auth.OAuth2(process.env.GCalendar_CLIENT_ID, process.env.GCalendar_CLIENT_SECRET, process.env.GCalendar_REDIRECT_URL);
-const serviceAuth = new google.auth.GoogleAuth({
-    keyFile: path_1.default.join(process.cwd(), '/utilities/keyFiles/sound-responder-334902-27e27960b2c3.json'),
-    scopes: [
-        'https://www.googleapis.com/auth/calendar',
-        'https://www.googleapis.com/auth/calendar.events',
-        'https://www.googleapis.com/auth/admin.directory.resource.calendar'
-    ],
-});
+// Oauth2 calendar
 const getAuth2Code = async () => {
     try {
         const scopes = [
@@ -41,7 +33,6 @@ const getClientToken = async () => {
         const keyObj = JSON.parse(authKey);
         const tokenRes = await oauth2Client.getToken(keyObj.code);
         console.log(tokenRes);
-        console.log(tokenRes.tokens.refresh_token);
         if (tokenRes.tokens.refresh_token) {
             (0, saveStringsToFiles_1.writeStringToFile)('./utilities/keyFiles/refresh_token.txt', JSON.stringify(tokenRes.tokens));
             console.log("refresh: ", tokenRes.tokens.refresh_token);
@@ -50,6 +41,7 @@ const getClientToken = async () => {
             await (0, saveStringsToFiles_1.writeStringToFile)('./utilities/keyFiles/access_token.txt', JSON.stringify(tokenRes.tokens));
             console.log("access: ", tokenRes.tokens.access_token);
         }
+        tokenRes.tokens;
     }
     catch (error) {
         console.log(error);
@@ -66,18 +58,47 @@ const getClientCalendar = async () => {
     });
     return calendar;
 };
+// Service calendar
+const serviceAuth = new google.auth.GoogleAuth({
+    keyFile: path_1.default.join(process.cwd(), '/utilities/keyFiles/sound-responder-334902-27e27960b2c3.json'),
+    scopes: [
+        'https://www.googleapis.com/auth/calendar',
+        'https://www.googleapis.com/auth/calendar.events',
+        'https://www.googleapis.com/auth/admin.directory.resource.calendar',
+        'https://www.googleapis.com/auth/drive'
+    ],
+});
+const getServiceCalendar = async () => {
+    const authClient = await serviceAuth.getClient();
+    authClient.subject = process.env.GCalendar_admin;
+    const calendar = await google.calendar({
+        version: 'v3',
+        auth: authClient
+    });
+    calendar.settings.context;
+    return calendar;
+};
+const getServiceDrive = async () => {
+    const authClient = await serviceAuth.getClient();
+    authClient.subject = process.env.GCalendar_admin;
+    const drive = await google.drive({
+        version: 'v3',
+        auth: authClient
+    });
+    return drive;
+};
+// interactions with the client calendar
 const getClientCalendars = async () => {
     try {
         const token = await (0, saveStringsToFiles_1.readFileContent)('./utilities/keyFiles/access_token.txt');
         const tokenObj = JSON.parse(token);
         oauth2Client.setCredentials(tokenObj);
-        // console.log(oauth2Client)
         const calendar = google.calendar({
             version: 'v3',
             auth: oauth2Client
         });
         const res = await calendar.calendarList.get({
-            calendarId: "c_bdcf749c763969d87ba39e9fe3a5d7c89025b3c01a1a12fbaa115f44373b8d4a@group.calendar.google.com"
+            calendarId: process.env.calGCalendar_calId
         });
         console.log(res.data);
     }
@@ -93,18 +114,15 @@ const getClientEvents = async () => {
     try {
         const calendar = await getClientCalendar();
         const res = await calendar.events.list({
-            calendarId: "c_bdcf749c763969d87ba39e9fe3a5d7c89025b3c01a1a12fbaa115f44373b8d4a@group.calendar.google.com",
+            calendarId: process.env.calGCalendar_calId,
             maxResults: 1000,
             orderBy: "updated"
         });
         (_a = res.data.items) === null || _a === void 0 ? void 0 : _a.forEach((el) => {
             console.log(el.summary);
             console.log(el.start);
-            //{ dateTime: '2024-12-15T18:30:00+08:00', timeZone: 'Asia/Singapore' }
             console.log(el.end);
-            //{ dateTime: '2024-12-15T20:30:00+08:00', timeZone: 'Asia/Singapore' }
             console.log(el.status);
-            // confirmed
         });
     }
     catch (err) {
@@ -129,14 +147,16 @@ const newClientEvent = async (calId, event) => {
     }
 };
 exports.newClientEvent = newClientEvent;
-const findClientEventByOrderId = async (calId, orderId) => {
+// interactions with the service calendar
+const findServiceEventByOrderId = async (calId, orderId) => {
+    var _a;
     try {
-        const calendar = await getClientCalendar();
+        const calendar = await getServiceCalendar();
         const res = await calendar.events.list({
             calendarId: calId,
             q: orderId,
         });
-        (0, logDev_1.logDev)({ status: res.status, protocol: 'get', summary: res.data.description });
+        (0, logDev_1.logDev)({ status: res.status, protocol: 'get', itemsCount: (_a = res.data.items) === null || _a === void 0 ? void 0 : _a.length });
         return res.data;
     }
     catch (err) {
@@ -144,31 +164,50 @@ const findClientEventByOrderId = async (calId, orderId) => {
         console.log(error.message);
     }
 };
-exports.findClientEventByOrderId = findClientEventByOrderId;
-// server side auth
-const getServerCalendars = async () => {
+exports.findServiceEventByOrderId = findServiceEventByOrderId;
+const getServiceEvents = async () => {
+    var _a;
     try {
-        const authClient = await serviceAuth.getClient();
-        // const project = await serviceAuth.getProjectId();
-        const client = await google.calendar({
-            version: 'v3',
-            auth: authClient
+        const calendar = await getServiceCalendar();
+        const res = await calendar.events.list({
+            calendarId: process.env.calGCalendar_calId,
+            maxResults: 1000,
+            orderBy: "updated"
         });
-        const res = await client.calendarList.get({
-            calendarId: "c_bdcf749c763969d87ba39e9fe3a5d7c89025b3c01a1a12fbaa115f44373b8d4a@group.calendar.google.com"
+        (_a = res.data.items) === null || _a === void 0 ? void 0 : _a.forEach((el) => {
+            console.log(el.summary);
+            console.log(el.start);
+            console.log(el.end);
+            console.log(el.status);
+            // confirmed
         });
-        console.log(res.data);
     }
     catch (err) {
         // the calendar Id is not found, will throw an error message: Not Found"
         const error = err;
-        console.log(error);
+        console.log(error.message);
     }
 };
-exports.getServerCalendars = getServerCalendars;
+exports.getServiceEvents = getServiceEvents;
+const newServiceEvent = async (calId, event, notification) => {
+    try {
+        const calendar = await getServiceCalendar();
+        const res = await calendar.events.insert({
+            calendarId: calId,
+            requestBody: event,
+            sendNotifications: notification
+        });
+        (0, logDev_1.logDev)({ status: res.status, protocal: 'insert', summary: res.data.summary });
+        return res;
+    }
+    catch (err) {
+        const error = err;
+        console.log(error.message);
+    }
+};
+exports.newServiceEvent = newServiceEvent;
 // scopes required for shopify integration
 /*
-calendar id: c_bdcf749c763969d87ba39e9fe3a5d7c89025b3c01a1a12fbaa115f44373b8d4a@group.calendar.google.com
 1) Read a calendar
 2) Read a calendar event
 3) Delete a calendar event

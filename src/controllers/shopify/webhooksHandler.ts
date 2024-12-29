@@ -2,7 +2,7 @@ import { NextFunction, Response } from "express"
 import { AppError } from './../../utilities/appError'
 import { logDev } from '../../utilities/logDev'
 import { formatDateToISO } from '../../utilities/dateToISO'
-import { findClientEventByOrderId, newClientEvent } from './../googlecalendar_core'
+import { findServiceEventByOrderId, newServiceEvent } from './../googlecalendar_core'
 import { calendar_v3 } from "googleapis"
 import { skip } from "node:test"
 
@@ -138,10 +138,15 @@ export type WebHookLineItem = {
     duties: any[], // Replace 'any' with a more specific type if known
     discount_allocations: any[] // Replace 'any' with a more specific type if known
 }
+type LineItemInfo = {
+    client: string; clientEmail: string | undefined, classTitle: string; timeISO: string; address: string; orderId: number; qty: number
+}
 
-const getClassInfo = (order: OrderCreated) => {
+const getLineItemsInfo = (order: OrderCreated) => {
     const lineItemsInfo = order.line_items.map((el) => {
-        let title = el.title
+        let client = order.customer.first_name
+        let classTitle = el.title
+        let clientEmail = order.customer.email? order.customer.email: undefined
         let orderId = order.id
         let timeISO: string = ''
         let address: string = ''
@@ -154,23 +159,21 @@ const getClassInfo = (order: OrderCreated) => {
                 address = el_01.value ? el_01.value : ''
             }
         })
-        return { title, timeISO, address, orderId, qty }
+        return { client, clientEmail, classTitle, timeISO, address, orderId, qty }
     })
     return lineItemsInfo
 }
-const getCalEvent = (info: {
-    title: string; timeISO: string; address: string; orderId: number; qty: number
-}) => {
+const getInternalCalEvent = (info: LineItemInfo, duration: number) => {
     const event: calendar_v3.Schema$Event = {
-        summary: `${info.title} | ${info.orderId}`,
+        summary: `${info.client} | ${info.classTitle} (Trainer - $Price) | ${info.orderId}`,
         location: info.address,
-        description: `A ${info.title} class request from shopify API. quantity: ${info.qty}`,
+        description: `A ${info.classTitle} class request from shopify API. quantity: ${info.qty}`,
         'start': {
             'dateTime': info.timeISO,
             'timeZone': 'Asia/Singapore',
         },
         'end': {
-            'dateTime': formatDateToISO(new Date(Date.parse(info.timeISO) + 3600000)),
+            'dateTime': formatDateToISO(new Date(Date.parse(info.timeISO) + duration*3600000)),
             'timeZone': 'Asia/Singapore',
         },
         'reminders': {
@@ -179,18 +182,53 @@ const getCalEvent = (info: {
                 { 'method': 'email', 'minutes': 24 * 60 },
                 { 'method': 'popup', 'minutes': 10 },
             ],
-        },
+        }
+        ,
+        attendees: [
+        {
+            email: process.env.GCalendar_coordinator,
+            organizer: true,
+            responseStatus: 'needsAction'
+        }
+    ]
     }
     return event
-
 }
-const getDoubleEvents = async (info: {
-    title: string; timeISO: string; address: string; orderId: number; qty: number
-}) => {
-    const data = await findClientEventByOrderId(process.env.GCalendar_calId!, info.orderId)
+const getExternalCalEvent = (info: LineItemInfo, duration: number) => {
+    const event: calendar_v3.Schema$Event = {
+        summary: `${info.client} | ${info.classTitle} | FITFAMCO`,
+        location: info.address,
+        description: `A ${info.classTitle} class request from shopify API. quantity: ${info.qty}`,
+        'start': {
+            'dateTime': info.timeISO,
+            'timeZone': 'Asia/Singapore',
+        },
+        'end': {
+            'dateTime': formatDateToISO(new Date(Date.parse(info.timeISO) + duration*3600000)),
+            'timeZone': 'Asia/Singapore',
+        },
+        'reminders': {
+            'useDefault': false,
+            'overrides': [
+                { 'method': 'email', 'minutes': 24 * 60 },
+                { 'method': 'popup', 'minutes': 10 },
+            ],
+        }
+        ,
+        attendees: [{
+            email: info.clientEmail,
+            organizer: true,
+            responseStatus: 'needsAction'
+        }
+    ]
+    }
+    return event
+}
+const getDoubleEvents = async (info: LineItemInfo) => {
+    const data = await findServiceEventByOrderId(process.env.GCalendar_calId!, info.orderId)
     let double = false
     data?.items ? data.items.forEach((el) => {
-        console.log(el.start?.dateTime)
+        logDev(el.start?.dateTime)
         if (el.start?.dateTime === info.timeISO) double = true
     }) : ''
     return double
@@ -198,15 +236,25 @@ const getDoubleEvents = async (info: {
 
 export const orderCreateHandler = async (req: any, res: Response) => {
   const orderCreated = req.bodyObj as OrderCreated
-  const lineItemsInfo = getClassInfo(orderCreated)
-  console.log(lineItemsInfo)
+  const lineItemsInfo = getLineItemsInfo(orderCreated)
+  if(lineItemsInfo.length<1){
+    res.status(400).json({
+        status: 400,
+        data: undefined,
+        message: "Bad request. No line items received."
+      })
+  }
+  logDev({lineItemsInfo: lineItemsInfo})
   try {
     for (const info of lineItemsInfo) {
         if(!info.address || !info.timeISO) continue 
-        const event = getCalEvent(info)
-        let double = await getDoubleEvents(info)
-        logDev(`${info.title} double detected ${double}`)
-        !double? await newClientEvent(process.env.GCalendar_calId!, event):''
+        const double = await getDoubleEvents(info)
+        logDev(`${info.classTitle} double detected ${double}`)
+        if(double) continue 
+        const event = getInternalCalEvent(info, 1)
+        const clientEvent = getExternalCalEvent(info, 1)
+        await newServiceEvent(process.env.GCalendar_calId!, event, true)
+        await newServiceEvent(process.env.GCalendar_clientCalId!, clientEvent, true)
     }
     res.status(200).json({
         status: 200,
@@ -214,12 +262,25 @@ export const orderCreateHandler = async (req: any, res: Response) => {
       })
   } catch (error) {
     console.log(error)
-    // send sync fail email**
+    // todo: send sync fail email**
     res.status(500).json({
       status: 500,
       data: { customerId: orderCreated.customer.id, message: error }
     })
   }
 }
-
-
+export const testEventCreation = async()=>{
+    const lineItem: LineItemInfo = {
+        client: 'test client',
+        clientEmail: 'test@example.com',
+        classTitle: 'test title',
+        timeISO: '2025-01-16T08:05:00+08:00',
+        address: '672A YISHUN AVENUE 4 VINE GROVE @ YISHUN SINGAPORE 761672, ZIP CODE: 761672',
+        orderId: 6329763889462,
+        qty: 1
+    } 
+        // const event = getInternalCalEvent(lineItem, 1)
+        const event = getExternalCalEvent(lineItem, 1)
+        const res = await newServiceEvent(process.env.GCalendar_calId!, event, true)
+        console.log (res?.data)
+}

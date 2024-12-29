@@ -1,23 +1,21 @@
-import express, { NextFunction, Request, Response } from 'express';
-import cors from 'cors'
+import express from 'express';
 import rawParser from './utilities/rawParser'
 
 //============= require modules =============//
 const app = express()
 const testRoutes = require('./routes/testRoutes')
-const AppError = require('./utilities/appError')
 const globalErrorHandler = require('./controllers/modalities/errorController')
 import { notFoundHandler } from "./utilities/errorHandlers"
 import { shopifyWebHookRoutes } from "./controllers/shopify/webHooks"
-import { formatDateToISO } from './utilities/dateToISO'
-import { logDev } from './utilities/logDev'
-import { findClientEventByOrderId, getAuth2Code, getServerCalendars, getClientToken, getClientCalendars, getClientEvents, newClientEvent} from "./controllers/googlecalendar_core"
+import { findServiceEventByOrderId } from "./controllers/googlecalendar_core"
+import {  } from './controllers/shopify/webhooksHandler';
 
 app.use('/webHook', rawParser, shopifyWebHookRoutes)
-findClientEventByOrderId(process.env.GCalendar_calId!, 6292931281206)
-
-// const corsOptions = {origin: ['']}
-app.use(cors());
+// run scripts
+if(process.env.environment === "development"){
+  findServiceEventByOrderId(process.env.GCalendar_calId!, 6329619644726)
+}
+  
 // static serve
 app.use(express.static('public'));
 
@@ -30,9 +28,9 @@ if (process.env.NODE_ENV === 'development') {
   const morgan = require('morgan')
   app.use(morgan('dev'));
 }
-
 // Routes
 app.use('/test', testRoutes);
+
 
 // catch errors
 
