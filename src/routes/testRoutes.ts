@@ -5,7 +5,6 @@ import {writeStringToFile } from "./../utilities/saveStringsToFiles"
 
 //============= require components =============//
 const express  = require('express')
-const typeSenseController = require('../controllers/typeSense/typseSenseClient')
 const router = express.Router()
 //============= require controllers =============//
 const asyncWrapper = require('./../utilities/asyncWrapper')
@@ -23,8 +22,5 @@ const getTest = asyncWrapper(async(req: Request, res: Response,next: NextFunctio
 })
 //============= routes =============//
 router.route('/').get(getTest)
-//============= typeSense operations =============//
-router.route('/typeSense/addClasses')
-.get(typeSenseController.addManyClasses)
 
 module.exports = router

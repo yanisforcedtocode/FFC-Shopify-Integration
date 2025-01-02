@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const saveStringsToFiles_1 = require("./../utilities/saveStringsToFiles");
 //============= require components =============//
 const express = require('express');
-const typeSenseController = require('../controllers/typeSense/typseSenseClient');
 const router = express.Router();
 //============= require controllers =============//
 const asyncWrapper = require('./../utilities/asyncWrapper');
@@ -21,7 +20,4 @@ const getTest = asyncWrapper(async (req, res, next) => {
 });
 //============= routes =============//
 router.route('/').get(getTest);
-//============= typeSense operations =============//
-router.route('/typeSense/addClasses')
-    .get(typeSenseController.addManyClasses);
 module.exports = router;
