@@ -8,6 +8,9 @@
     "dev": "nodemon server.js",
     "start": "node server.js"
   },
+  "engines": {
+    "node": "23.6.0"
+  },
   "author": "Yan",
   "license": "ISC",
   "dependencies": {
